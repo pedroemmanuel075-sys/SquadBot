@@ -2,112 +2,111 @@ import { logger } from '../utils/logger.js';
 
 export const botConfig = {
   // =========================
-  // BOT PRESENCE (what users see under the bot name)
+  // PRESENÇA DO BOT (o status que os cria da live veem)
   // =========================
-  // `status` options:
-  // - "online"    = green dot
-  // - "idle"      = yellow moon
-  // - "dnd"       = red do-not-disturb
-  // - "invisible" = appears offline
+  // Opções de `status`:
+  // - "online"    = bolinha verde da esperança
+  // - "idle"      = luazinha amarela de quem foi buscar café
+  // - "dnd"       = bolinha vermelha do "não enche o saco, tô em clutch"
+  // - "invisible" = modo fantasma pra stalkear o chat
   presence: {
-    // Current online state shown on Discord.
+    // Como o bot tá aparecendo no Discord agora.
     status: "online",
 
-    // Activity lines shown under the bot name.
-    // `type` number mapping from Discord:
-    // 0 = Playing
-    // 1 = Streaming
-    // 2 = Listening
-    // 3 = Watching
-    // 4 = Custom
-    // 5 = Competing
+    // As mentiras que o bot conta embaixo do nome dele.
+    // Mapeamento numérico da API do Discord:
+    // 0 = Jogando
+    // 1 = Transmitindo (Mandando aquele streamzão)
+    // 2 = Ouvindo
+    // 3 = Assistindo
+    // 4 = Personalizado
+    // 5 = Competindo
     activities: [
       {
-        name: "Custom Status", // required by Discord API, not shown in the client
-        state: "stalking",     // this is what people actually see
-        type: 4,               // Custom
+        name: "Status Maroto", // Requisitado pela API, mas ninguém liga
+        state: "Stalkeando o Squadrife na live 👀", // O que a galera realmente vê
+        type: 4, // Personalizado
       },
     ],
   },
 
   // =========================
-  // COMMAND BEHAVIOR
+  // COMPORTAMENTO DOS COMANDOS
   // =========================
   commands: {
-    // Bot owner user IDs (comma-separated in OWNER_IDS env var).
-    // Owners can access owner/admin-level bot commands.
+    // IDs dos ADMs / Donos do bot (puxados da variável de ambiente OWNER_IDS).
+    // Só a elite do Squadrife segura a caneta pesada aqui.
     owners: process.env.OWNER_IDS?.split(",").map((id) => id.trim()).filter(Boolean) || [],
 
-    // Default wait time between command uses (in seconds).
+    // Tempo de descanso padrão pros esbarradores de botão (em segundos).
     defaultCooldown: 3,
 
-    // If true, old commands are removed before re-registering.
+    // Se mandar `true`, apaga os comandos antigos antes de recarregar (limpeza de primavera).
     deleteCommands: false,
 
-    // Optional server ID retained for tutorial compatibility; not used for command registration.
+    // ID do servidor de testes (só pra não quebrar a live principal).
     testGuildId: process.env.TEST_GUILD_ID,
 
-    // When true (or MAINTENANCE_MODE=true), only bot owners can run commands.
+    // Quando tá ativo (ou MAINTENANCE_MODE=true), só os chefões usam o bot. Modo "Gabi, deu ruim".
     maintenanceMode: process.env.MAINTENANCE_MODE === "true",
 
-    // Command prefix for text-based commands (e.g., "!" for "!ping").
-    // Supports both slash commands and prefix commands.
+    // Prefixo pra chamar o bot no chat (ex: "!" pra "!ping").
     prefix: process.env.PREFIX || "!",
   },
 
   // =========================
-  // APPLICATIONS SYSTEM
+  // SISTEMA DE FORMULÁRIOS / RECRUTAMENTO
   // =========================
   applications: {
-    // Default questions shown when someone fills out an application.
+    // Perguntas padrão quando o emocionado quer entrar pro grupo.
     defaultQuestions: [
-      { question: "What is your name?", required: true },
-      { question: "How old are you?", required: true },
-      { question: "Why do you want to join?", required: true },
+      { question: "Qual o seu vulgo?", required: true },
+      { question: "Quantos anos tu tem nessa carcaça?", required: true },
+      { question: "Por que tu quer se juntar a essa baderna do Squadrife?", required: true },
     ],
 
-    // Embed colors by application status.
+    // Cores do formulário dependendo do desfecho.
     statusColors: {
-      pending: "#FFA500",
-      approved: "#00FF00",
-      denied: "#FF0000",
+      pending: "#FFA500", // Na moita (Pendente)
+      approved: "#00FF00", // Passou de ano! (Aprovado)
+      denied: "#FF0000", // Tchau e benção (Negado)
     },
 
-    // How long users must wait before submitting another application (hours).
+    // Quantas horas o comédia tem que esperar pra mandar outro formulário.
     applicationCooldown: 24,
 
-    // Auto-delete denied applications after this many days.
+    // Deleta os formulários reprovados depois de x dias (faxina).
     deleteDeniedAfter: 7,
 
-    // Auto-delete approved applications after this many days.
+    // Deleta os aprovados depois de x dias.
     deleteApprovedAfter: 30,
 
-    // Role IDs allowed to manage applications.
-    managerRoles: [], // Will be populated from environment or database
+    // Cargos autorizados a dar o carimbo de aprovado ou reprovado.
+    managerRoles: [], // Vai puxar do banco ou do .env
   },
 
   // =========================
-  // EMBED COLORS & BRANDING
+  // CORES E VISUAL DOS EMBEDS
   // =========================
-  // IMPORTANT: This is the SINGLE SOURCE OF TRUTH for all bot colors
+  // IMPORTANTE: Aqui é o SANTO GRAAL das cores do bot do Squadrife!
   embeds: {
     colors: {
-      // Main brand colors.
+      // Cores da firma.
       primary: "#336699",
       secondary: "#2F3136",
 
-      // Standard status colors for success/error/warning/info messages.
-      success: "#57F287",
-      error: "#ED4245",
-      warning: "#FEE75C",
-      info: "#3498DB",
+      // Cores pros momentos de paz e de caos.
+      success: "#57F287", // GGWP
+      error: "#ED4245", // Deu ruim total
+      warning: "#FEE75C", // Calma lá, patrão
+      info: "#3498DB", // Papo reto
 
-      // Neutral utility colors.
+      // Utilitários neutros.
       light: "#FFFFFF",
       dark: "#202225",
       gray: "#99AAB5",
 
-      // Discord-style palette shortcuts.
+      // Paleta clássica do Discord.
       blurple: "#5865F2",
       green: "#57F287",
       yellow: "#FEE75C",
@@ -115,7 +114,7 @@ export const botConfig = {
       red: "#ED4245",
       black: "#000000",
 
-      // Feature-specific colors.
+      // Cores por funcionalidade.
       giveaway: {
         active: "#57F287",
         ended: "#ED4245",
@@ -126,29 +125,29 @@ export const botConfig = {
         closed: "#ED4245",
         pending: "#99AAB5",
       },
-      economy: "#F1C40F",
-      birthday: "#E91E63",
-      moderation: "#9B59B6",
+      economy: "#F1C40F", // Cor de dinheirama
+      birthday: "#E91E63", // Dia de bolo
+      moderation: "#9B59B6", // Martelo do Ban
 
-      // Ticket priority color mapping.
+      // Mapeamento de cor por urgência do ticket.
       priority: {
         none: "#95A5A6",
-        low: "#3498db",
-        medium: "#2ecc71",
-        high: "#f1c40f",
-        urgent: "#e74c3c",
+        low: "#3498db",   // Tranquilo
+        medium: "#2ecc71", // Suave
+        high: "#f1c40f",   // Esquentou
+        urgent: "#e74c3c", // FOGO NO PARQUINHO
       },
     },
     footer: {
-      // Default footer text used in bot embeds.
-      text: "Titan Bot",
-      // Footer icon URL (null = no icon).
+      // Texto de rodapé oficial.
+      text: "Bot Oficial do Squadrife 🔥 | Curte e compartilha!",
+      // Ícone do rodapé (null = sem imagem).
       icon: null,
     },
-    // Default thumbnail URL for embeds (null = no thumbnail).
+    // Miniatura padrão (null = sem imagem).
     thumbnail: null,
     author: {
-      // Optional default embed author block.
+      // Bloco do autor padrão.
       name: null,
       icon: null,
       url: null,
@@ -156,36 +155,36 @@ export const botConfig = {
   },
 
   // =========================
-  // ECONOMY SETTINGS
+  // ECONOMIA (O CASSINO DO SQUADRIFE)
   // =========================
   economy: {
     currency: {
-      // Currency display name.
-      name: "coins",
-      // Plural display name.
-      namePlural: "coins",
-      // Currency symbol shown in balances.
-      symbol: "$",
+      // Nome da moeda da live.
+      name: "moeda",
+      // Nome no plural.
+      namePlural: "moedas",
+      // Símbolo pro saldo.
+      symbol: "🪙",
     },
 
-    // Starting balance for new users.
+    // Quanto o coitado começa na conta.
     startingBalance: 0,
 
-    // Maximum bank amount before upgrades (if upgrades are used).
+    // Capa de grana no banco antes dos upgrades.
     baseBankCapacity: 100000,
 
-    // Daily reward amount.
+    // Esmola diária no /daily.
     dailyAmount: 100,
 
-    // Work command random payout range.
+    // Quanto rende o trampo aleatório no /work.
     workMin: 10,
     workMax: 100,
 
-    // Beg command random payout range.
+    // Quanto rende pedir esmola no /beg.
     begMin: 5,
     begMax: 50,
 
-    // Command cooldowns (milliseconds).
+    // Cooldowns da economia (em milissegundos).
     cooldowns: {
       daily: 24 * 60 * 60 * 1000,
       work: 60 * 60 * 1000,
@@ -193,237 +192,216 @@ export const botConfig = {
       rob: 4 * 60 * 60 * 1000,
     },
 
-    // Chance to succeed when robbing (0.4 = 40%).
+    // Chance de dar bom no assalto (0.4 = 40% de chance de virar o Robin Hood).
     robSuccessRate: 0.4,
 
-    // Jail time after failed rob (milliseconds).
-    // 3600000 = 1 hour.
+    // Tempo de xadrez se se der mal no roubo (em milissegundos).
+    // 3600000 = 1 hora de molho.
     robFailJailTime: 3600000,
   },
 
   // =========================
-  // SHOP SETTINGS
+  // LOJINHA DA LIVE
   // =========================
-  // Add shop defaults here when needed.
   shop: {
-
+    // Adicione os itens da lojinha do Squadrife aqui depois
   },
 
   // =========================
-  // TICKET SYSTEM
+  // SISTEMA DE TICKETS (MAMÃE SOCORRO)
   // =========================
   tickets: {
-    // Category ID where new tickets are created (null = no forced category).
+    // Categoria do Discord onde caem os tickets novos.
     defaultCategory: null,
 
-    // Role IDs allowed to manage/support tickets.
+    // Cargos da moderação que têm a chave do barraco.
     supportRoles: [],
 
-    // Priority options users/staff can assign.
+    // Níveis de desespero do usuário.
     priorities: {
       none: {
         emoji: "⚪",
         color: "#95A5A6",
-        label: "None",
+        label: "Sem pressa",
       },
       low: {
         emoji: "🟢",
         color: "#2ECC71",
-        label: "Low",
+        label: "Suave na nave",
       },
       medium: {
         emoji: "🟡",
         color: "#F1C40F",
-        label: "Medium",
+        label: "Aperta aí",
       },
       high: {
         emoji: "🔴",
         color: "#E74C3C",
-        label: "High",
+        label: "Deu xabu",
       },
       urgent: {
         emoji: "🚨",
         color: "#E91E63",
-        label: "Urgent",
+        label: "SOCORRO SQUADRIFE",
       },
     },
 
-    // Default priority for new tickets.
+    // Nível de urgência padrão.
     defaultPriority: "none",
 
-    // Category ID where closed tickets are archived.
+    // Categoria onde os tickets mortos vão descansar em paz.
     archiveCategory: null,
 
-    // Channel ID where ticket logs are sent.
+    // Canal onde a moderação vê os rastros de tudo.
     logChannel: null,
   },
 
   // =========================
-  // GIVEAWAY SETTINGS
+  // SORTEIOS (MOMENTO PIX/GIFT CARD)
   // =========================
   giveaways: {
-    // Default giveaway duration in milliseconds.
-    // 86400000 = 24 hours.
+    // Duração padrão do sorteio.
+    // 86400000 = 24 horinhas.
     defaultDuration: 86400000,
 
-    // Allowed winner count range.
+    // Quantos sortudos ganham por vez.
     minimumWinners: 1,
     maximumWinners: 10,
 
-    // Allowed giveaway duration range in milliseconds.
-    // 300000 = 5 minutes.
+    // Limites de tempo (5 min a 30 dias).
     minimumDuration: 300000,
-    // 2592000000 = 30 days.
     maximumDuration: 2592000000,
 
-    // Role IDs allowed to host giveaways.
+    // Cargo de quem pode fazer a boa pros inscritos.
     allowedRoles: [],
 
-    // Role IDs that bypass giveaway restrictions.
+    // Cargos dos imunes às regras do sorteio.
     bypassRoles: [],
   },
 
   // =========================
-  // BIRTHDAY SETTINGS
+  // ANIVERSÁRIOS DA GALERA
   // =========================
   birthday: {
-    // Role ID given to users on their birthday.
+    // Cargo do aniversariante do dia (pra ganhar parabéns no chat).
     defaultRole: null,
 
-    // Channel ID where birthday announcements are posted.
+    // Canal pra mandar aquele "Parabéns, parabéns, hoje é seu dia...".
     announcementChannel: null,
 
-    // Timezone used to calculate birthday dates.
+    // Fuso horário pra não dar parabéns adiantado ou atrasado.
     timezone: "UTC",
   },
 
   // =========================
-  // VERIFICATION SETTINGS
+  // VERIFICAÇÃO (SISTEMA ANTI-FLAMMER)
   // =========================
   verification: {
-    // Message shown when posting the verification panel.
-    defaultMessage: "Click the button below to verify yourself and gain access to the server!",
+    // Mensagem de boas-vindas na porta do servidor.
+    defaultMessage: "Clica no botão aí infra pra provar que tu não é um robô de spam e liberar o chat!",
 
-    // Text on the verification button.
-    defaultButtonText: "Verify",
+    // Texto do botão.
+    defaultButtonText: "Sou Humano, Prometo! 🤖❌",
 
-    // Automatic verification behavior.
+    // Regras pra liberar o cabra automaticamente.
     autoVerify: {
-      // How automatic verification decides who is auto-approved:
-      // - "none"        = everyone is auto-verified immediately
-      // - "account_age" = account must be older than set days
-      // - "server_size" = auto-verify everyone only in smaller servers
+      // Modos:
+      // - "none"        = entra todo mundo de uma vez
+      // - "account_age" = conta tem que ter uns dias de vida
+      // - "server_size" = só auto-verifica se o servidor for pequeno
       defaultCriteria: "none",
 
-      // Days used when `defaultCriteria` is `account_age`.
+      // Dias mínimos se o critério for idade da conta.
       defaultAccountAgeDays: 7,
 
-      // Member count threshold used when `defaultCriteria` is `server_size`.
-      // Example: 1000 means auto-verify if server has fewer than 1000 members.
+      // Limite de membros pro modo `server_size`.
       serverSizeThreshold: 1000,
 
-      // Allowed safety limits for account-age requirements.
-      // 1 = minimum day, 365 = maximum days.
+      // Trava de segurança pra idade da conta (1 dia a 1 ano).
       minAccountAge: 1,
       maxAccountAge: 365,
 
-      // If true, user receives a DM after verification.
+      // Se avisa no PV depois que passa na verificação.
       sendDMNotification: true,
 
-      // Human-readable descriptions for each criteria mode.
+      // Explicação de cada modo pra não dar nós na cabeça.
       criteria: {
-        account_age: "Account must be older than specified days",
-        server_size: "All users if server has less than 1000 members",
-        none: "All users immediately"
+        account_age: "Conta precisa ter uns dias de estrada",
+        server_size: "Auto-aprova se a live/servidor tiver menos de 1000 membros",
+        none: "Libera geral sem frescura"
       }
     },
 
-    // Minimum time between verification attempts (milliseconds).
-    // 5000 = 5 seconds.
+    // Cooldown entre tentativas de verificação (5 segundos).
     verificationCooldown: 5000,
 
-    // Maximum failed attempts allowed inside the time window below.
+    // Quantas vezes o cara pode errar antes de levar um 'péra lá'.
     maxVerificationAttempts: 3,
 
-    // Time window for counting attempts (milliseconds).
-    // 60000 = 1 minute.
+    // Janela de tempo pra contar as pisadas na bola (1 minuto).
     attemptWindow: 60000,
 
-    // In-memory safety limits (helps avoid unbounded memory growth).
+    // Travas pra memória do servidor não explodir.
     maxCooldownEntries: 10000,
     maxAttemptEntries: 10000,
-    // Cleanup frequency for cooldown/attempt maps (milliseconds).
-    // 300000 = 5 minutes.
     cooldownCleanupInterval: 300000,
-    // Maximum metadata payload size for audit entries (bytes).
     maxAuditMetadataBytes: 4096,
-    // Maximum number of audit entries kept in memory.
     maxInMemoryAuditEntries: 1000,
-    // If true, log every verification action.
     logAllVerifications: true,
-    // If true, preserve verification audit history.
     keepAuditTrail: true,
   },
 
   // =========================
-  // WELCOME / GOODBYE MESSAGES
+  // MENSAGENS DE ENTRADA E SAÍDA
   // =========================
   welcome: {
-    // Welcome template posted when a user joins.
-    // Placeholders: {user}, {server}, {memberCount}
+    // Mensagem quando entra mais um pro bando.
+    // Variáveis: {user}, {server}, {memberCount}
     defaultWelcomeMessage:
-      "Welcome {user} to {server}! We now have {memberCount} members!",
-    // Goodbye template posted when a user leaves.
-    // Placeholders: {user}, {memberCount}
+      "Salve, {user}! Seja bem-vindo ao servidor do {server}! Já somos {memberCount} doidos por aqui!",
+    // Mensagem quando o cara mete o pé.
+    // Variáveis: {user}, {memberCount}
     defaultGoodbyeMessage:
-      "{user} has left the server. We now have {memberCount} members.",
-    // Channel ID for welcome messages.
+      "Ih, {user} meteu o pé... Sobraram {memberCount} sobreviventes.",
+    
     defaultWelcomeChannel: null,
-    // Channel ID for goodbye messages.
     defaultGoodbyeChannel: null,
   },
 
   // =========================
-  // COUNTER CHANNELS
+  // CANAIS DE CONTADOR (ESTATÍSTICAS DA LIVE)
   // =========================
   counters: {
     defaults: {
-      // Default naming/description templates for counter entries.
-      name: "{name} Counter",
-      description: "Server {name} counter",
-      // Channel type used for counters (typically "voice").
+      name: "Contador {name}",
+      description: "Estatísticas do Squadrife: {name}",
       type: "voice",
-      // Channel name format. `{count}` is replaced automatically.
-      channelName: "{name}-{count}",
+      channelName: "{name}: {count}",
     },
     permissions: {
-      // Default denied permissions for the counter channel.
       deny: ["VIEW_CHANNEL"],
-      // Default allowed permissions for the counter channel.
       allow: ["VIEW_CHANNEL", "CONNECT", "SPEAK"],
     },
     messages: {
-      // Default response messages for counter actions.
-      created: "✅ Created counter **{name}**",
-      deleted: "🗑️ Deleted counter **{name}**",
-      updated: "🔄 Updated counter **{name}**",
+      created: "✅ Contador **{name}** tá no ar!",
+      deleted: "🗑️ Mandou o contador **{name}** pro saco!",
+      updated: "🔄 Contador **{name}** atualizado!",
     },
     types: {
-      // Built-in counter types and how each count is calculated.
       members: {
-        name: "👥 Members",
-        description: "Total members in the server",
+        name: "👥 Galera Toda",
+        description: "Todo mundo que tá no servidor",
         getCount: (guild) => guild.memberCount.toString(),
       },
       bots: {
-        name: "🤖 Bots",
-        description: "Total bot accounts in the server",
+        name: "🤖 Robozada",
+        description: "Apenas a inteligência artificial",
         getCount: (guild) =>
           guild.members.cache.filter((m) => m.user.bot).size.toString(),
       },
       members_only: {
-        name: "👤 Humans",
-        description: "Total human members (non-bots)",
+        name: "👤 Seres Humanos",
+        description: "Apenas a rapaziada (sem bots)",
         getCount: (guild) =>
           guild.members.cache.filter((m) => !m.user.bot).size.toString(),
       },
@@ -431,42 +409,41 @@ export const botConfig = {
   },
 
   // =========================
-  // GENERIC BOT MESSAGES
+  // MENSAGENS PADRÃO DO BOT (AS PATADAS)
   // =========================
   messages: {
-    noPermission: "You do not have permission to use this command.",
-    cooldownActive: "Please wait {time} before using this command again.",
-    errorOccurred: "An error occurred while executing this command.",
-    missingPermissions:
-      "I am missing required permissions to perform this action.",
-    commandDisabled: "This command has been disabled.",
-    maintenanceMode: "The bot is currently in maintenance mode.",
+    noPermission: "Sai fora! Tu não tem moral/permissão pra usar esse comando não.",
+    cooldownActive: "Calma aí, apressado! Espera {time} pra mandar outro comando.",
+    errorOccurred: "Eita! Deu zica interna aqui pra rodar esse comando. Chama a moderação!",
+    missingPermissions: "Tô sem os poderes (permissões) necessários pra fazer essa boa.",
+    commandDisabled: "Esse comando tá desativado no momento, meu chapa.",
+    maintenanceMode: "O bot tá em manutenção! O Squadrife tá mexendo nos cabos aqui.",
   },
 
   // =========================
-  // FEATURE TOGGLES
+  // CHAVINHAS DE LIGA/DESLIGA (SISTEMAS)
   // =========================
-  // Set any feature to `false` to disable it globally.
+  // Bota `false` se quiser desligar algo globalmente na live.
   features: {
-    // Core systems.
+    // Núcleo do Bot.
     economy: true,
     leveling: true,
     moderation: true,
     logging: true,
     welcome: true,
 
-    // Community engagement systems.
+    // Modos de engajamento do chat.
     tickets: true,
     giveaways: true,
     birthday: true,
     counter: true,
 
-    // Security and self-service systems.
+    // Segurança e organização.
     verification: true,
     reactionRoles: true,
     joinToCreate: true,
 
-    // Utility/quality-of-life modules.
+    // Farofa & Utilitários.
     voice: true,
     search: true,
     tools: true,
@@ -481,37 +458,35 @@ export function validateConfig(config) {
   const errors = [];
 
   if (process.env.NODE_ENV !== 'production') {
-    logger.debug('Environment variables check:');
-    logger.debug('DISCORD_TOKEN exists:', !!process.env.DISCORD_TOKEN);
-    logger.debug('TOKEN exists:', !!process.env.TOKEN);
-    logger.debug('CLIENT_ID exists:', !!process.env.CLIENT_ID);
-    logger.debug('GUILD_ID exists:', !!process.env.GUILD_ID);
-    logger.debug('POSTGRES_HOST exists:', !!process.env.POSTGRES_HOST);
+    logger.debug('Checando as variáveis de ambiente pros cria:');
+    logger.debug('DISCORD_TOKEN tá na área:', !!process.env.DISCORD_TOKEN);
+    logger.debug('TOKEN tá na área:', !!process.env.TOKEN);
+    logger.debug('CLIENT_ID tá na área:', !!process.env.CLIENT_ID);
+    logger.debug('GUILD_ID tá na área:', !!process.env.GUILD_ID);
+    logger.debug('POSTGRES_HOST tá na área:', !!process.env.POSTGRES_HOST);
     logger.debug('NODE_ENV:', process.env.NODE_ENV);
   }
 
   if (!process.env.DISCORD_TOKEN && !process.env.TOKEN) {
-    errors.push("Bot token is required (DISCORD_TOKEN or TOKEN environment variable)");
+    errors.push("Faltou o Token do Bot, meu nobre! (DISCORD_TOKEN ou TOKEN no .env)");
   }
 
   if (!process.env.CLIENT_ID) {
-    errors.push("Client ID is required (CLIENT_ID environment variable)");
+    errors.push("Faltou o ID do Cliente! (CLIENT_ID no .env)");
   }
 
   if (process.env.NODE_ENV === 'production') {
-    // A full connection URL (DATABASE_URL / POSTGRES_URL) satisfies all Postgres
-    // requirements, matching how src/config/database/postgres.js resolves the pool config.
     const hasConnectionUrl = Boolean(process.env.POSTGRES_URL || process.env.DATABASE_URL);
 
     if (!hasConnectionUrl) {
       if (!process.env.POSTGRES_HOST) {
-        errors.push("PostgreSQL connection is required in production (set DATABASE_URL/POSTGRES_URL, or POSTGRES_HOST)");
+        errors.push("Cadê o Host do Postgres pra rodar em produção? (DATABASE_URL/POSTGRES_URL ou POSTGRES_HOST)");
       }
       if (!process.env.POSTGRES_USER) {
-        errors.push("PostgreSQL user is required in production (set DATABASE_URL/POSTGRES_URL, or POSTGRES_USER)");
+        errors.push("Cadê o Usuário do Postgres? (DATABASE_URL/POSTGRES_URL ou POSTGRES_USER)");
       }
       if (!process.env.POSTGRES_PASSWORD) {
-        errors.push("PostgreSQL password is required in production (set DATABASE_URL/POSTGRES_URL, or POSTGRES_PASSWORD)");
+        errors.push("Cadê a Senha do Postgres? (DATABASE_URL/POSTGRES_URL ou POSTGRES_PASSWORD)");
       }
     }
   }
@@ -521,7 +496,7 @@ export function validateConfig(config) {
 
 const configErrors = validateConfig(botConfig);
 if (configErrors.length > 0) {
-  logger.error("Bot configuration errors:", configErrors.join("\n"));
+  logger.error("Deu ruim nas configurações do bot:", configErrors.join("\n"));
   if (process.env.NODE_ENV === "production") {
     process.exit(1);
   }
@@ -622,10 +597,8 @@ export function getDefaultApplicationQuestions() {
 }
 
 export function getColor(path, fallback = "#99AAB5") {
-  
   if (typeof path === "number") return path;
   if (typeof path === "string" && path.startsWith("#")) {
-    
     return parseInt(path.replace("#", ""), 16);
   }
   const result = path
