@@ -504,25 +504,55 @@ if (configErrors.length > 0) {
 
 export const BotConfig = botConfig;
 
+// Mapeamento aceitando chaves em inglês e em português para não quebrar nenhuma parte do bot!
 const COMMAND_CATEGORY_FEATURE_MAP = {
   birthday: "birthday",
+  aniversario: "birthday",
+  aniversário: "birthday",
   community: "community",
+  comunidade: "community",
   economy: "economy",
+  economia: "economy",
   fun: "fun",
+  diversao: "fun",
+  diversão: "fun",
   giveaway: "giveaways",
+  giveaways: "giveaways",
+  sorteios: "giveaways",
   jointocreate: "joinToCreate",
+  entrarparacriar: "joinToCreate",
   leveling: "leveling",
+  niveis: "leveling",
+  níveis: "leveling",
   logging: "logging",
+  registros: "logging",
   moderation: "moderation",
+  moderacao: "moderation",
+  moderação: "moderation",
   music: "music",
+  musica: "music",
+  música: "music",
   reaction_roles: "reactionRoles",
+  cargosporreacao: "reactionRoles",
+  cargos_por_reacao: "reactionRoles",
+  cargos_por_reação: "reactionRoles",
   search: "search",
+  busca: "search",
   serverstats: "counter",
+  estatisticasdoservidor: "counter",
+  estatísticasdoservidor: "counter",
   ticket: "tickets",
+  tickets: "tickets",
   tools: "tools",
+  ferramentas: "tools",
   utility: "utility",
+  utilidades: "utility",
   verification: "verification",
+  verificacao: "verification",
+  verificação: "verification",
   welcome: "welcome",
+  boasvindas: "welcome",
+  boas_vindas: "welcome",
 };
 
 function normalizeCategoryKey(category) {
@@ -572,7 +602,7 @@ export function isFeatureEnabled(featureKey) {
 export function isCommandCategoryEnabled(category) {
   const normalized = normalizeCategoryKey(category);
 
-  if (!normalized || normalized === "core") {
+  if (!normalized || normalized === "core" || normalized === "principal") {
     return true;
   }
 
@@ -587,7 +617,7 @@ export function isCommandCategoryEnabled(category) {
 export function getApplicationStatusColor(status) {
   const colors = botConfig.applications?.statusColors || {};
   const hex = colors[status];
-  return hex ? getColor(hex) : getColor(status === "approved" ? "success" : status === "denied" ? "error" : "warning");
+  return hex ? getColor(hex) : getColor(status === "approved" || status === "aprovado" ? "success" : status === "denied" || status === "negado" ? "error" : "warning");
 }
 
 export function getDefaultApplicationQuestions() {
