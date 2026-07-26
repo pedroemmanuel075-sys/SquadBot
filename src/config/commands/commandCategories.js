@@ -1,32 +1,35 @@
 /**
- * Command category metadata for the command access manager.
+ * Ícones e metadados das categorias de comandos do SquadBot.
  */
 
 export const CATEGORY_ICONS = {
-  Birthday: '🎂',
-  Community: '👥',
-  Core: 'ℹ️',
-  Economy: '💰',
-  Fun: '🎮',
-  Giveaway: '🎉',
-  JoinToCreate: '🔌',
-  Leveling: '📊',
-  Logging: '📝',
-  Moderation: '🛡️',
-  Music: '🎵',
-  Reaction_roles: '🎭',
-  Search: '🔍',
-  ServerStats: '📈',
-  Ticket: '🎫',
-  Tools: '🛠️',
-  Utility: '🔧',
-  Verification: '✅',
-  Welcome: '👋',
+  Aniversário: '🎂',
+  Comunidade: '👥',
+  Principal: 'ℹ️',
+  Economia: '💰',
+  Diversão: '🎮',
+  Sorteios: '🎉',
+  EntrarParaCriar: '🔌',
+  Níveis: '📊',
+  Registros: '📝',
+  Moderação: '🛡️',
+  Música: '🎵',
+  CargosPorReação: '🎭',
+  Busca: '🔍',
+  EstatísticasDoServidor: '📈',
+  Tickets: '🎫',
+  Ferramentas: '🛠️',
+  Utilidades: '🔧',
+  Verificação: '✅',
+  BoasVindas: '👋',
 };
 
-/** Commands that always stay available so admins can recover access. */
+/** Comandos blindados que NUNCA podem ser desativados (pra os ADMs não ficarem na mão). */
 export const PROTECTED_COMMANDS = new Set(['commands', 'configwizard']);
 
+/**
+ * Deixa a chave da categoria no esquema (minúsculas e com underline).
+ */
 export function normalizeCategoryKey(category) {
   return String(category || '')
     .trim()
@@ -34,6 +37,9 @@ export function normalizeCategoryKey(category) {
     .replace(/\s+/g, '_');
 }
 
+/**
+ * Formata o nome da categoria pra ficar bonito na tela.
+ */
 export function formatCategoryName(rawCategory) {
   return String(rawCategory || '')
     .replace(/_/g, ' ')
@@ -41,6 +47,9 @@ export function formatCategoryName(rawCategory) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+/**
+ * Puxa o emoji/ícone da categoria ou manda a pastinha padrão se não achar.
+ */
 export function getCategoryIcon(category) {
   return CATEGORY_ICONS[category] || CATEGORY_ICONS[formatCategoryName(category)] || '📁';
 }
