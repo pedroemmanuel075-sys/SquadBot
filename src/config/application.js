@@ -3,10 +3,12 @@ import path from "path";
 import botConfig, { validateConfig } from "./bot.js";
 import { shopConfig as shop } from "./shop/index.js";
 import { pgConfig } from "./database/postgres.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const appConfig = {
+  // Caminhos das pastas do projeto
   paths: {
     root: path.join(__dirname, "../.."),
     commands: path.join(__dirname, "../commands"),
@@ -18,11 +20,12 @@ const appConfig = {
     interactions: path.join(__dirname, "../interactions"),
   },
 
+  // Configurações principais do Bot do Squadrife
   bot: {
     ...botConfig,
     token: process.env.DISCORD_TOKEN || process.env.TOKEN,
     clientId: process.env.CLIENT_ID,
-    // Retained for tutorial/setup compatibility; not used for command registration.
+    // Mantido por compatibilidade de tutorial/setup; não usado para registrar comandos.
     guildId: process.env.GUILD_ID,
 
     shop: {
@@ -31,11 +34,12 @@ const appConfig = {
     },
   },
 
-  // PostgreSQL configuration - Primary production database
+  // Configuração do PostgreSQL - Banco de dados principal de produção
   postgresql: {
     ...pgConfig,
   },
 
+  // Sistema de Logs (Registros de erros e avisos no console)
   logging: {
     level: process.env.LOG_LEVEL || "info",
     file: {
@@ -57,6 +61,7 @@ const appConfig = {
     },
   },
 
+  // Configuração da API do Bot
   api: {
     port: process.env.PORT || 3000,
     cors: {
@@ -72,11 +77,13 @@ const appConfig = {
 
   shop,
 
+  // Recursos ativos
   features: {
     ...botConfig.features,
     music: botConfig.features?.music ?? true,
   },
 
+  // Ambiente de execução
   env: process.env.NODE_ENV || "development",
   isProduction: process.env.NODE_ENV === "production",
   isDevelopment: process.env.NODE_ENV !== "production",
