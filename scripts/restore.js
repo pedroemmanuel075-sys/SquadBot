@@ -1,137 +1,47 @@
-import { spawnSync } from 'node:child_process';
-import { readdir } from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import dotenv from 'dotenv';
-import { logger } from '../src/utils/logger.js';
+#!/usr/bin/env node
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+import sqlite3 from 'sqlite3';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+import logger from '../src/utils/logger.js';
 
-function parseArgs(argv) {
-  const args = {};
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-  for (let index = 0; index < argv.length; index += 1) {
-    const token = argv[index];
-    if (!token.startsWith('--')) {
-      continue;
-    }
+const dbPath = path.join(__dirname, '../database/squadrife.db');
+const backupDir = path.join(__dirname, '../database/backups');
 
-    const [rawKey, inlineValue] = token.slice(2).split('=');
-    if (typeof inlineValue !== 'undefined') {
-      args[rawKey] = inlineValue;
-      continue;
-    }
-
-    const nextToken = argv[index + 1];
-    if (!nextToken || nextToken.startsWith('--')) {
-      args[rawKey] = true;
-      continue;
-    }
-
-    args[rawKey] = nextToken;
-    index += 1;
-  }
-
-  return args;
-}
-
-function ensureCommand(command) {
-  const result = spawnSync(command, ['--version'], {
-    encoding: 'utf8',
-    stdio: 'pipe',
-    shell: process.platform === 'win32'
-  });
-
-  if (result.status !== 0) {
-    throw new Error(`${command} is required but was not found in PATH.`);
-  }
-}
-
-async function resolveLatestBackup(backupDir) {
-  const entries = await readdir(backupDir, { withFileTypes: true });
-  const dumpFiles = entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.dump'))
-    .map((entry) => entry.name)
-    .sort((left, right) => right.localeCompare(left));
-
-  if (dumpFiles.length === 0) {
-    throw new Error(`No .dump backup files found in ${backupDir}`);
-  }
-
-  return path.join(backupDir, dumpFiles[0]);
-}
-
-function runCommand(command, args) {
-  const result = spawnSync(command, args, {
-    encoding: 'utf8',
-    stdio: 'pipe',
-    shell: process.platform === 'win32'
-  });
-
-  if (result.status !== 0) {
-    throw new Error(`${command} failed: ${result.stderr || result.stdout || 'Unknown error'}`);
-  }
-}
-
-async function run() {
-  const args = parseArgs(process.argv.slice(2));
-  const backupDir = path.resolve(args['backup-dir'] || process.env.BACKUP_DIR || path.join(process.cwd(), 'backups'));
-  const targetUrl = args['target-url'] || process.env.POSTGRES_RESTORE_URL || process.env.POSTGRES_URL;
-
-  if (!targetUrl) {
-    throw new Error('Missing target database URL. Set POSTGRES_RESTORE_URL or POSTGRES_URL.');
-  }
-
-  if (!args.confirm) {
-    throw new Error('Restore requires explicit confirmation. Re-run with --confirm.');
-  }
-
-  ensureCommand('pg_restore');
-  ensureCommand('psql');
-
-  const inputPath = args.input ? path.resolve(args.input) : await resolveLatestBackup(backupDir);
-  const dropSchema = args['drop-schema'] === true || args['drop-schema'] === 'true';
-
-  logger.warn('Starting database restore', {
-    event: 'restore.start',
-    inputPath,
-    targetUrl,
-    dropSchema
-  });
-
-  if (dropSchema) {
-    runCommand('psql', [
-      '--dbname',
-      targetUrl,
-      '-v',
-      'ON_ERROR_STOP=1',
-      '-c',
-      'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;'
-    ]);
-  }
-
-  runCommand('pg_restore', [
-    '--clean',
-    '--if-exists',
-    '--no-owner',
-    '--no-privileges',
-    '--dbname',
-    targetUrl,
-    inputPath
-  ]);
-
-  logger.info('Database restore completed', {
-    event: 'restore.completed',
-    inputPath,
-    targetUrl
-  });
-}
-
-run().catch((error) => {
-  logger.error('Restore command failed', {
-    event: 'restore.failed',
-    error: error.message
-  });
+if (!fs.existsSync(backupDir)) {
+  logger.error('Diretório de backups não encontrado!');
   process.exit(1);
-});
+}
+
+const backups = fs.readdirSync(backupDir).sort().reverse();
+
+if (backups.length === 0) {
+  logger.error('Nenhum backup encontrado!');
+  process.exit(1);
+}
+
+const latestBackup = path.join(backupDir, backups[0]);
+
+try {
+  const source = fs.createReadStream(latestBackup);
+  const dest = fs.createWriteStream(dbPath);
+
+  source.pipe(dest);
+
+  source.on('end', () => {
+    logger.info(`✅ Banco restaurado com sucesso de: ${backups[0]}`);
+    process.exit(0);
+  });
+
+  source.on('error', (error) => {
+    logger.error('Erro ao restaurar backup:', error);
+    process.exit(1);
+  });
+} catch (error) {
+  logger.error('Erro ao restaurar banco de dados:', error);
+  process.exit(1);
+}
