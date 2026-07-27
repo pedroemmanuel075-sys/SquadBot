@@ -1,87 +1,70 @@
-import { SlashCommandBuilder } from 'discord.js';
-import { createEmbed, errorEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
-import { getEconomyData, getMaxBankCapacity } from '../../utils/economy.js';
-import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
-import { logger } from '../../utils/logger.js';
-import { InteractionHelper } from '../../utils/interactionHelper.js';
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { EMOJIS, COLORS } from '../../config/constants.js';
+import { getQuery } from '../../database/init.js';
+import logger from '../../utils/logger.js';
 
-export default {
-    data: new SlashCommandBuilder()
-        .setName('balance')
-        .setDescription("Check your or someone else's balance")
-        .addUserOption(option =>
-            option
-                .setName('user')
-                .setDescription('User to check balance for')
-                .setRequired(false)
-        ),
+const data = new SlashCommandBuilder()
+  .setName('balance')
+  .setDescription('💰 Ver seu saldo ou de outro usuário')
+  .addUserOption((option) =>
+    option.setName('usuario').setDescription('Usuário para verificar').setRequired(false)
+  )
+  .setNameLocalizations({
+    'pt-BR': 'balance',
+  })
+  .setDescriptionLocalizations({
+    'pt-BR': '💰 Ver seu saldo ou de outro usuário',
+  });
 
-    execute: withErrorHandling(async (interaction, config, client) => {
-        const deferred = await InteractionHelper.safeDefer(interaction);
-        if (!deferred) return;
+async function execute(interaction) {
+  try {
+    const targetUser = interaction.options.getUser('usuario') || interaction.user;
+    const guildId = interaction.guildId;
 
-        const userOption = interaction.options.getUser("user");
-        const targetUser = userOption || interaction.user;
-        const guildId = interaction.guildId;
+    const economy = await getQuery(
+      'SELECT * FROM economy WHERE user_id = ? AND guild_id = ?',
+      [targetUser.id, guildId]
+    );
 
-        logger.info(`[ECONOMY] Balance check - userOption: ${userOption?.id || 'null'}, targetUser: ${targetUser.id}, guildId: ${guildId}, isPrefix: ${!!interaction._commandStartTime}`);
+    const balance = economy?.balance || 0;
+    const bank = economy?.bank || 0;
+    const total = balance + bank;
 
-        logger.debug(`[ECONOMY] Balance check for ${targetUser.id}`, { userId: targetUser.id, guildId });
-
-        if (targetUser.bot) {
-            throw createError(
-                "Bot user queried for balance",
-                ErrorTypes.VALIDATION,
-                "Bots don't have an economy balance."
-            );
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.PRIMARY)
+      .setTitle(`${EMOJIS.COIN} Cartão Bancario`)
+      .setThumbnail(targetUser.displayAvatarURL())
+      .addFields(
+        {
+          name: '💵 Bolso',
+          value: `**${balance}** ${EMOJIS.COIN}`,
+          inline: true,
+        },
+        {
+          name: '📛 Banco',
+          value: `**${bank}** ${EMOJIS.COIN}`,
+          inline: true,
+        },
+        {
+          name: '💸 Total',
+          value: `**${total}** ${EMOJIS.COIN}`,
+          inline: false,
         }
+      )
+      .setFooter({
+        text: targetUser.username,
+        iconURL: targetUser.displayAvatarURL(),
+      });
 
-        const userData = await getEconomyData(client, guildId, targetUser.id);
+    await interaction.reply({ embeds: [embed] });
+    logger.info(`Balance: ${interaction.user.username} verificou saldo`);
+  } catch (error) {
+    logger.error('Erro no comando balance:', error);
+    await interaction.reply({
+      content: `${EMOJIS.ERROR} Erro ao verificar saldo`,
+      ephemeral: true,
+    });
+  }
+}
 
-        logger.info(`[ECONOMY] Economy data retrieved - userData:`, userData);
-
-        if (!userData) {
-            throw createError(
-                "Failed to load economy data",
-                ErrorTypes.DATABASE,
-                "Failed to load economy data. Please try again later.",
-                { userId: targetUser.id, guildId }
-            );
-        }
-
-        const maxBank = getMaxBankCapacity(userData);
-
-        const wallet = typeof userData.wallet === 'number' ? userData.wallet : 0;
-        const bank = typeof userData.bank === 'number' ? userData.bank : 0;
-
-            const embed = createEmbed({
-                title: `${targetUser.username}'s Balance`,
-                description: `Here is the current financial status for ${targetUser.username}.`,
-            })
-                .addFields(
-                    {
-                        name: "💵 Cash",
-                        value: `$${wallet.toLocaleString()}`,
-                        inline: true,
-                    },
-                    {
-                        name: "🏦 Bank",
-                        value: `$${bank.toLocaleString()} / $${maxBank.toLocaleString()}`,
-                        inline: true,
-                    },
-                    {
-                        name: "💰 Total",
-                        value: `$${(wallet + bank).toLocaleString()}`,
-                        inline: true,
-                    }
-                )
-                .setFooter({
-                    text: `Requested by ${interaction.user.tag}`,
-                    iconURL: interaction.user.displayAvatarURL(),
-                });
-
-            logger.info(`[ECONOMY] Balance retrieved`, { userId: targetUser.id, wallet, bank });
-
-            await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
-    }, { command: 'balance' })
-};
+export default { data, execute };

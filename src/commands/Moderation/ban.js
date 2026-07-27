@@ -1,67 +1,88 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
-import { successEmbed } from '../../utils/embeds.js';
-import { InteractionHelper } from '../../utils/interactionHelper.js';
-import { ModerationService } from '../../services/moderation/moderationService.js';
-import { TitanBotError, ErrorTypes } from '../../utils/errorHandler.js';
+import { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
+import { EMOJIS, COLORS } from '../../config/constants.js';
+import logger from '../../utils/logger.js';
 
-export default {
-    data: new SlashCommandBuilder()
-        .setName("ban")
-        .setDescription("Ban a user from the server")
-        .addUserOption((option) =>
-            option
-                .setName("target")
-                .setDescription("The user to ban")
-                .setRequired(true),
-        )
-        .addStringOption((option) =>
-            option.setName("reason").setDescription("Reason for the ban"),
-        )
-        .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
-    category: "moderation",
+const data = new SlashCommandBuilder()
+  .setName('ban')
+  .setDescription('🔨 Banir um usuário do servidor')
+  .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
+  .addUserOption((option) =>
+    option
+      .setName('usuario')
+      .setDescription('Usuário para banir')
+      .setRequired(true)
+  )
+  .addStringOption((option) =>
+    option
+      .setName('motivo')
+      .setDescription('Motivo do ban')
+      .setRequired(false)
+  )
+  .setNameLocalizations({
+    'pt-BR': 'ban',
+  })
+  .setDescriptionLocalizations({
+    'pt-BR': '🔨 Banir um usuário do servidor',
+  });
 
-    async execute(interaction, config, client) {
-        const user = interaction.options.getUser("target");
-        const reason = interaction.options.getString("reason") || "No reason provided";
+async function execute(interaction) {
+  try {
+    const targetUser = interaction.options.getUser('usuario');
+    const reason = interaction.options.getString('motivo') || 'Sem motivo especificado';
 
-        if (!user) {
-            throw new TitanBotError(
-                'Missing target user',
-                ErrorTypes.USER_INPUT,
-                'You must specify a user to ban.',
-                { subtype: 'invalid_user' },
-            );
+    if (targetUser.id === interaction.user.id) {
+      return await interaction.reply({
+        content: `${EMOJIS.ERROR} Você não pode banir a si mesmo!`,
+        ephemeral: true,
+      });
+    }
+
+    if (targetUser.bot) {
+      return await interaction.reply({
+        content: `${EMOJIS.ERROR} Você não pode banir bots!`,
+        ephemeral: true,
+      });
+    }
+
+    try {
+      await interaction.guild.members.ban(targetUser, { reason });
+    } catch (error) {
+      return await interaction.reply({
+        content: `${EMOJIS.ERROR} Não tenho permissão para banir esse usuário!`,
+        ephemeral: true,
+      });
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.SUCCESS)
+      .setTitle(`${EMOJIS.SUCCESS} Usuário Banido`)
+      .setThumbnail(targetUser.displayAvatarURL())
+      .addFields(
+        {
+          name: '👤 Usuário',
+          value: targetUser.username,
+          inline: true,
+        },
+        {
+          name: '📋 Motivo',
+          value: reason,
+          inline: false,
         }
+      )
+      .setFooter({
+        text: `Banido por ${interaction.user.username}`,
+        iconURL: interaction.user.displayAvatarURL(),
+      });
 
-        if (user.id === interaction.user.id) {
-            throw new TitanBotError(
-                'Cannot ban self',
-                ErrorTypes.VALIDATION,
-                'You cannot ban yourself.',
-            );
-        }
-        if (user.id === client.user.id) {
-            throw new TitanBotError(
-                'Cannot ban bot',
-                ErrorTypes.VALIDATION,
-                'You cannot ban the bot.',
-            );
-        }
+    await interaction.reply({ embeds: [embed] });
+    logger.info(`Ban: ${targetUser.username} foi banido por ${interaction.user.username}`);
+  } catch (error) {
+    logger.error('Erro no comando ban:', error);
+    await interaction.reply({
+      content: `${EMOJIS.ERROR} Erro ao banir usuário`,
+      ephemeral: true,
+    });
+  }
+}
 
-        const result = await ModerationService.banUser({
-            guild: interaction.guild,
-            user,
-            moderator: interaction.member,
-            reason,
-        });
-
-        await InteractionHelper.universalReply(interaction, {
-            embeds: [
-                successEmbed(
-                    `🚫 **Banned** ${user.tag}`,
-                    `**Reason:** ${reason}\n**Case ID:** #${result.caseId}`,
-                ),
-            ],
-        });
-    },
-};
+export default { data, execute };
