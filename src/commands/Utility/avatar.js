@@ -1,35 +1,43 @@
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
-import { createEmbed } from '../../utils/embeds.js';
-import { logger } from '../../utils/logger.js';
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { EMOJIS, COLORS } from '../../config/constants.js';
+import logger from '../../utils/logger.js';
 
-import { InteractionHelper } from '../../utils/interactionHelper.js';
-export default {
-    data: new SlashCommandBuilder()
-    .setName("avatar")
-    .setDescription("Display a user's avatar image")
-    .addUserOption((option) =>
-      option
-        .setName("target")
-        .setDescription(
-          "The user whose avatar you want to see (defaults to you)",
-        ),
-    ),
+const data = new SlashCommandBuilder()
+  .setName('avatar')
+  .setDescription('🖼️ Ver avatar de um usuário')
+  .addUserOption((option) =>
+    option.setName('usuario').setDescription('Usuário para ver avatar').setRequired(false)
+  )
+  .setNameLocalizations({
+    'pt-BR': 'avatar',
+  })
+  .setDescriptionLocalizations({
+    'pt-BR': '🖼️ Ver avatar de um usuário',
+  });
 
-  async execute(interaction) {
-    const user = interaction.options.getUser("target") || interaction.user;
-    const avatarUrl = user.displayAvatarURL({ size: 2048, dynamic: true });
+async function execute(interaction) {
+  try {
+    const targetUser = interaction.options.getUser('usuario') || interaction.user;
+    const avatarURL = targetUser.displayAvatarURL({ size: 1024 });
 
-    const embed = createEmbed({ 
-      title: `${user.username}'s Avatar`, 
-      description: `[Download Link](${avatarUrl})` 
-    })
-      .setImage(avatarUrl);
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.PRIMARY)
+      .setTitle(`🖼️ Avatar de ${targetUser.username}`)
+      .setImage(avatarURL)
+      .setURL(avatarURL)
+      .setFooter({
+        text: `Clique no título para ver em tamanho grande`,
+      });
 
-    await InteractionHelper.safeReply(interaction, { embeds: [embed] });
-    logger.info(`Avatar command executed`, {
-      userId: interaction.user.id,
-      targetUserId: user.id,
-      guildId: interaction.guildId
+    await interaction.reply({ embeds: [embed] });
+    logger.info(`Avatar: ${interaction.user.username} viu avatar`);
+  } catch (error) {
+    logger.error('Erro no comando avatar:', error);
+    await interaction.reply({
+      content: `${EMOJIS.ERROR} Erro ao buscar avatar`,
+      ephemeral: true,
     });
   }
-};
+}
+
+export default { data, execute };

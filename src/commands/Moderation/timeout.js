@@ -1,111 +1,115 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
-import { successEmbed } from '../../utils/embeds.js';
-import { logger } from '../../utils/logger.js';
-import { TitanBotError, ErrorTypes } from '../../utils/errorHandler.js';
-import { InteractionHelper } from '../../utils/interactionHelper.js';
-import { ModerationService } from '../../services/moderation/moderationService.js';
+import { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
+import { EMOJIS, COLORS } from '../../config/constants.js';
+import logger from '../../utils/logger.js';
 
-const durationChoices = [
-    { name: "5 minutes", value: 5 },
-    { name: "10 minutes", value: 10 },
-    { name: "30 minutes", value: 30 },
-    { name: "1 hour", value: 60 },
-    { name: "6 hours", value: 360 },
-    { name: "1 day", value: 1440 },
-    { name: "1 week", value: 10080 },
-];
+const data = new SlashCommandBuilder()
+  .setName('timeout')
+  .setDescription('⏱️ Silenciar um usuário temporariamente')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
+  .addUserOption((option) =>
+    option
+      .setName('usuario')
+      .setDescription('Usuário para silenciar')
+      .setRequired(true)
+  )
+  .addIntegerOption((option) =>
+    option
+      .setName('tempo')
+      .setDescription('Tempo em minutos')
+      .setRequired(true)
+  )
+  .addStringOption((option) =>
+    option
+      .setName('motivo')
+      .setDescription('Motivo do timeout')
+      .setRequired(false)
+  )
+  .setNameLocalizations({
+    'pt-BR': 'timeout',
+  })
+  .setDescriptionLocalizations({
+    'pt-BR': '⏱️ Silenciar um usuário temporariamente',
+  });
 
-export default {
-    data: new SlashCommandBuilder()
-        .setName("timeout")
-        .setDescription("Timeout a user for a specific duration.")
-        .addUserOption((option) =>
-            option
-                .setName("target")
-                .setDescription("User to timeout")
-                .setRequired(true),
-        )
-        .addIntegerOption(
-            (option) =>
-                option
-                    .setName("duration")
-                    .setDescription("Duration of the timeout")
-                    .setRequired(true)
-                    .addChoices(...durationChoices),
-        )
-        .addStringOption((option) =>
-            option.setName("reason").setDescription("Reason for the timeout"),
-        )
-        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
-    category: "moderation",
+async function execute(interaction) {
+  try {
+    const targetUser = interaction.options.getUser('usuario');
+    const minutes = interaction.options.getInteger('tempo');
+    const reason = interaction.options.getString('motivo') || 'Sem motivo especificado';
 
-    async execute(interaction, config, client) {
-        const deferSuccess = await InteractionHelper.safeDefer(interaction);
-        if (!deferSuccess) {
-            logger.warn(`Timeout interaction defer failed`, {
-                userId: interaction.user.id,
-                guildId: interaction.guildId,
-                commandName: 'timeout',
-            });
-            return;
+    if (minutes < 1 || minutes > 40320) {
+      return await interaction.reply({
+        content: `${EMOJIS.ERROR} O tempo deve ser entre 1 e 40320 minutos (28 dias)!`,
+        ephemeral: true,
+      });
+    }
+
+    if (targetUser.id === interaction.user.id) {
+      return await interaction.reply({
+        content: `${EMOJIS.ERROR} Você não pode silenciar a si mesmo!`,
+        ephemeral: true,
+      });
+    }
+
+    if (targetUser.bot) {
+      return await interaction.reply({
+        content: `${EMOJIS.ERROR} Você não pode silenciar bots!`,
+        ephemeral: true,
+      });
+    }
+
+    const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+    if (!member) {
+      return await interaction.reply({
+        content: `${EMOJIS.ERROR} Usuário não encontrado no servidor!`,
+        ephemeral: true,
+      });
+    }
+
+    try {
+      await member.timeout(minutes * 60 * 1000, reason);
+    } catch (error) {
+      return await interaction.reply({
+        content: `${EMOJIS.ERROR} Não tenho permissão para silenciar esse usuário!`,
+        ephemeral: true,
+      });
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.SUCCESS)
+      .setTitle(`${EMOJIS.SUCCESS} Usuário Silenciado`)
+      .setThumbnail(targetUser.displayAvatarURL())
+      .addFields(
+        {
+          name: '👤 Usuário',
+          value: targetUser.username,
+          inline: true,
+        },
+        {
+          name: '⏰ Duração',
+          value: `${minutes} minutos`,
+          inline: true,
+        },
+        {
+          name: '📋 Motivo',
+          value: reason,
+          inline: false,
         }
+      )
+      .setFooter({
+        text: `Silenciado por ${interaction.user.username}`,
+        iconURL: interaction.user.displayAvatarURL(),
+      });
 
-        const targetUser = interaction.options.getUser("target");
-        const member = interaction.options.getMember("target");
-        const durationMinutes = interaction.options.getInteger("duration");
-        const reason = interaction.options.getString("reason") || "No reason provided";
+    await interaction.reply({ embeds: [embed] });
+    logger.info(`Timeout: ${targetUser.username} foi silenciado por ${minutes}min`);
+  } catch (error) {
+    logger.error('Erro no comando timeout:', error);
+    await interaction.reply({
+      content: `${EMOJIS.ERROR} Erro ao silenciar usuário`,
+      ephemeral: true,
+    });
+  }
+}
 
-        if (!targetUser) {
-            throw new TitanBotError(
-                'Missing target user',
-                ErrorTypes.USER_INPUT,
-                'You must specify a user to timeout.',
-                { subtype: 'invalid_user' },
-            );
-        }
-
-        if (targetUser.id === interaction.user.id) {
-            throw new TitanBotError(
-                "Cannot timeout self",
-                ErrorTypes.VALIDATION,
-                "You cannot timeout yourself.",
-            );
-        }
-        if (targetUser.id === client.user.id) {
-            throw new TitanBotError(
-                "Cannot timeout bot",
-                ErrorTypes.VALIDATION,
-                "You cannot timeout the bot.",
-            );
-        }
-        if (!member) {
-            throw new TitanBotError(
-                "Target not found",
-                ErrorTypes.USER_INPUT,
-                "The target user is not currently in this server.",
-            );
-        }
-
-        const durationMs = durationMinutes * 60 * 1000;
-        const result = await ModerationService.timeoutUser({
-            guild: interaction.guild,
-            member,
-            moderator: interaction.member,
-            durationMs,
-            reason,
-        });
-
-        const durationDisplay =
-            durationChoices.find((c) => c.value === durationMinutes)
-                ?.name || `${durationMinutes} minutes`;
-
-        await InteractionHelper.safeEditReply(interaction, {
-            embeds: [
-                successEmbed(
-                    `⏳ **Timed out** ${targetUser.tag} for ${durationDisplay}.`,
-                    `**Reason:** ${reason}\n**Case ID:** #${result.caseId}`,
-                ),
-            ],
-        });
-    },
-};
+export default { data, execute };

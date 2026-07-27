@@ -1,78 +1,96 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
-import { successEmbed } from '../../utils/embeds.js';
-import { InteractionHelper } from '../../utils/interactionHelper.js';
-import { ModerationService } from '../../services/moderation/moderationService.js';
-import { TitanBotError, ErrorTypes } from '../../utils/errorHandler.js';
+import { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
+import { EMOJIS, COLORS } from '../../config/constants.js';
+import logger from '../../utils/logger.js';
 
-export default {
-    data: new SlashCommandBuilder()
-        .setName("kick")
-        .setDescription("Kick a user from the server")
-        .addUserOption((option) =>
-            option
-                .setName("target")
-                .setDescription("The user to kick")
-                .setRequired(true),
-        )
-        .addStringOption((option) =>
-            option.setName("reason").setDescription("Reason for the kick"),
-        )
-        .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
-    category: "moderation",
+const data = new SlashCommandBuilder()
+  .setName('kick')
+  .setDescription('👢 Expulsar um usuário do servidor')
+  .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers)
+  .addUserOption((option) =>
+    option
+      .setName('usuario')
+      .setDescription('Usuário para expulsar')
+      .setRequired(true)
+  )
+  .addStringOption((option) =>
+    option
+      .setName('motivo')
+      .setDescription('Motivo do kick')
+      .setRequired(false)
+  )
+  .setNameLocalizations({
+    'pt-BR': 'kick',
+  })
+  .setDescriptionLocalizations({
+    'pt-BR': '👢 Expulsar um usuário do servidor',
+  });
 
-    async execute(interaction, config, client) {
-        const targetUser = interaction.options.getUser("target");
-        const member = interaction.options.getMember("target");
-        const reason = interaction.options.getString("reason") || "No reason provided";
+async function execute(interaction) {
+  try {
+    const targetUser = interaction.options.getUser('usuario');
+    const reason = interaction.options.getString('motivo') || 'Sem motivo especificado';
 
-        if (!targetUser) {
-            throw new TitanBotError(
-                'Missing target user',
-                ErrorTypes.USER_INPUT,
-                'You must specify a user to kick.',
-                { subtype: 'invalid_user' },
-            );
+    if (targetUser.id === interaction.user.id) {
+      return await interaction.reply({
+        content: `${EMOJIS.ERROR} Você não pode expulsar a si mesmo!`,
+        ephemeral: true,
+      });
+    }
+
+    if (targetUser.bot) {
+      return await interaction.reply({
+        content: `${EMOJIS.ERROR} Você não pode expulsar bots!`,
+        ephemeral: true,
+      });
+    }
+
+    const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+    if (!member) {
+      return await interaction.reply({
+        content: `${EMOJIS.ERROR} Usuário não encontrado no servidor!`,
+        ephemeral: true,
+      });
+    }
+
+    try {
+      await member.kick(reason);
+    } catch (error) {
+      return await interaction.reply({
+        content: `${EMOJIS.ERROR} Não tenho permissão para expulsar esse usuário!`,
+        ephemeral: true,
+      });
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.SUCCESS)
+      .setTitle(`${EMOJIS.SUCCESS} Usuário Expulso`)
+      .setThumbnail(targetUser.displayAvatarURL())
+      .addFields(
+        {
+          name: '👤 Usuário',
+          value: targetUser.username,
+          inline: true,
+        },
+        {
+          name: '📋 Motivo',
+          value: reason,
+          inline: false,
         }
+      )
+      .setFooter({
+        text: `Expulso por ${interaction.user.username}`,
+        iconURL: interaction.user.displayAvatarURL(),
+      });
 
-        if (targetUser.id === interaction.user.id) {
-            throw new TitanBotError(
-                "Cannot kick self",
-                ErrorTypes.VALIDATION,
-                "You cannot kick yourself.",
-            );
-        }
+    await interaction.reply({ embeds: [embed] });
+    logger.info(`Kick: ${targetUser.username} foi expulso por ${interaction.user.username}`);
+  } catch (error) {
+    logger.error('Erro no comando kick:', error);
+    await interaction.reply({
+      content: `${EMOJIS.ERROR} Erro ao expulsar usuário`,
+      ephemeral: true,
+    });
+  }
+}
 
-        if (targetUser.id === client.user.id) {
-            throw new TitanBotError(
-                "Cannot kick bot",
-                ErrorTypes.VALIDATION,
-                "You cannot kick the bot.",
-            );
-        }
-
-        if (!member) {
-            throw new TitanBotError(
-                "Target not found",
-                ErrorTypes.USER_INPUT,
-                "The target user is not currently in this server.",
-                { subtype: 'user_not_found' },
-            );
-        }
-
-        const result = await ModerationService.kickUser({
-            guild: interaction.guild,
-            member,
-            moderator: interaction.member,
-            reason,
-        });
-
-        await InteractionHelper.universalReply(interaction, {
-            embeds: [
-                successEmbed(
-                    `👢 **Kicked** ${targetUser.tag}`,
-                    `**Reason:** ${reason}\n**Case ID:** #${result.caseId}`,
-                ),
-            ],
-        });
-    },
-};
+export default { data, execute };
